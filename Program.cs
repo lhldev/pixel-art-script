@@ -61,7 +61,7 @@ namespace gamingplatform32bitpainter_starving_artist_
             {
                 while (Paused)
                 {
-                    //pause
+                    //pause when paused is true
                 }
                 DrawPixel(item.color, new Vector(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
             }
