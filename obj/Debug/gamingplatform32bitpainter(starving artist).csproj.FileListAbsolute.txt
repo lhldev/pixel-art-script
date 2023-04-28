@@ -6,3 +6,11 @@ C:\Users\User\Desktop\koko\tools\c#\code\project\gamingplatform32bitpainter(star
 C:\Users\User\Desktop\koko\tools\c#\code\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).exe
 C:\Users\User\Desktop\koko\tools\c#\code\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).pdb
 C:\Users\User\Desktop\koko\tools\c#\code\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).csproj.SuggestedBindingRedirects.cache
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\bin\Debug\gamingplatform32bitpainter(starving artist).exe.config
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\bin\Debug\gamingplatform32bitpainter(starving artist).exe
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\bin\Debug\gamingplatform32bitpainter(starving artist).pdb
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).csproj.AssemblyReference.cache
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).csproj.SuggestedBindingRedirects.cache
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).csproj.CoreCompileInputs.cache
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).exe
+C:\Users\User\Desktop\koko\tools\cs\c#\project\gamingplatform32bitpainter(starving artist)\obj\Debug\gamingplatform32bitpainter(starving artist).pdb
