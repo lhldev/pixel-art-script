@@ -56,11 +56,11 @@ namespace gamingplatform32bitpainter_starving_artist_
                 DrawPixel(item.color, new Vector(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
             }
 
-            while (true)
-            {
-                Console.WriteLine("x: " + Cursor.Position.X + " y: " + Cursor.Position.Y);
-            }
-            
+            //repeating
+            pauserThread.Abort();
+            PixelToDrawList = new List<PixelToDraw>();
+            Paused = true;
+            Main(args = null);
         }
 
         static void DrawPixel(Color color, Vector pos)
