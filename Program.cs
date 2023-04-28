@@ -13,6 +13,8 @@ using System.Diagnostics;
 using System.Windows.Input;
 using Cursor = System.Windows.Forms.Cursor;
 using System.Security.Cryptography.X509Certificates;
+using System.Drawing.Drawing2D;
+using System.Windows.Media.Media3D;
 
 namespace roblox32bitpainter_starving_artist_
 {
@@ -32,14 +34,22 @@ namespace roblox32bitpainter_starving_artist_
             pauserThread.SetApartmentState(ApartmentState.STA);
             pauserThread.Start();
             Console.WriteLine("enter file name...");
-            string fileName = Console.ReadLine();
-            Bitmap image = new Bitmap(fileName);
-
+            string fileName = Console.ReadLine().Replace("\"", "");
+            Bitmap image = new Bitmap(32, 32);
+            using (var sourceImage = new Bitmap(fileName))
+            { 
+                using (var graphics = Graphics.FromImage(image))
+                {
+                    graphics.InterpolationMode = InterpolationMode.NearestNeighbor; // set interpolation mode
+                    graphics.DrawImage(sourceImage, 0, 0, 32, 32);
+                }
+            }
             for (int y = 0; y < image.Height; y++)
             {
                 for (int x = 0; x < image.Width; x++)
                 {
-                    Color pixelColor = image.GetPixel(x, y);
+                    Color pixelColor = RoundColor(image.GetPixel(x, y), 4);
+                    
                     PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector(x,y)));
                 }
             }
@@ -62,6 +72,16 @@ namespace roblox32bitpainter_starving_artist_
             Paused = true;
             Main(args = null);
         }
+
+        static Color RoundColor(Color color, int nearest = 16)
+        {
+            int red = (int)Math.Round((double)(color.R / nearest)) * nearest;
+            int green = (int)Math.Round((double)(color.G / nearest)) * nearest;
+            int blue = (int)Math.Round((double)(color.B / nearest)) * nearest;
+            int alpha = (int)Math.Round((double)(color.A / nearest)) * nearest;
+            return Color.FromArgb(alpha, red, green, blue);
+        }
+
 
         static void DrawPixel(Color color, Vector pos)
         {
