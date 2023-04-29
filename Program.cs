@@ -15,6 +15,9 @@ using Cursor = System.Windows.Forms.Cursor;
 using System.Security.Cryptography.X509Certificates;
 using System.Drawing.Drawing2D;
 using System.Windows.Media.Media3D;
+using System.Runtime.InteropServices.ComTypes;
+
+//restart loop
 
 namespace gamingplatform32bitpainter_starving_artist_
 {
@@ -35,20 +38,13 @@ namespace gamingplatform32bitpainter_starving_artist_
             pauserThread.Start();
             Console.WriteLine("enter file name...");
             string fileName = Console.ReadLine().Replace("\"", "");
-            Bitmap image = new Bitmap(32, 32);
-            using (var sourceImage = new Bitmap(fileName))
-            { 
-                using (var graphics = Graphics.FromImage(image))
-                {
-                    graphics.InterpolationMode = InterpolationMode.NearestNeighbor; // set interpolation mode
-                    graphics.DrawImage(sourceImage, 0, 0, 32, 32);
-                }
-            }
+            Bitmap image = Resize32(Crop1to1(new Bitmap(fileName)));
+
             for (int y = 0; y < image.Height; y++)
             {
                 for (int x = 0; x < image.Width; x++)
                 {
-                    Color pixelColor = RoundColor(image.GetPixel(x, y), 4);
+                    Color pixelColor = RoundColor(image.GetPixel(x, y));// <-- round color
                     
                     PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector(x,y)));
                 }
@@ -71,6 +67,48 @@ namespace gamingplatform32bitpainter_starving_artist_
             PixelToDrawList = new List<PixelToDraw>();
             Paused = true;
             Main(args = null);
+        }
+
+
+        public static Bitmap Crop1to1(Bitmap image)
+        {
+            if (image.Width == image.Height)
+            {
+                //excape if already 1:1
+                return image;
+            }
+
+            int width = image.Width;
+            int height = image.Height;
+
+            // Determine the smaller dimension
+            int minDimension = Math.Min(width, height);
+
+            // Calculate the cropping coordinates
+            int x = (width - minDimension) / 2;
+            int y = (height - minDimension) / 2;
+
+            // Create a rectangle representing the cropping area
+            Rectangle cropArea = new Rectangle(x, y, minDimension, minDimension);
+
+            // Crop the image and return the result
+            Bitmap croppedImage = new Bitmap(minDimension, minDimension);
+            using (Graphics g = Graphics.FromImage(croppedImage))
+            {
+                g.DrawImage(image, new Rectangle(0, 0, minDimension, minDimension), cropArea, GraphicsUnit.Pixel);
+            }
+            return croppedImage;
+        }
+
+        public static Bitmap Resize32(Bitmap image)
+        {
+            Bitmap resizedImage = new Bitmap(32, 32);
+            using (var graphics = Graphics.FromImage(resizedImage))
+            {
+                    graphics.InterpolationMode = InterpolationMode.HighQualityBicubic; // set interpolation mode
+                    graphics.DrawImage(image, 0, 0, 32, 32);
+            }
+            return resizedImage;
         }
 
         static Color RoundColor(Color color, int nearest = 16)
