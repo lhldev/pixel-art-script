@@ -30,12 +30,11 @@ namespace roblox32bitpainter_starving_artist_
         public static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
         public static List<PixelToDraw> PixelToDrawList = new List<PixelToDraw>();
         public static bool Paused = true;
-
+        public static bool Restart = false;
+        public static Thread pauserThread = new Thread(new ThreadStart(pauser));
         static void Main(string[] args)
         {
-            Thread pauserThread = new Thread(new ThreadStart(pauser));
-            pauserThread.SetApartmentState(ApartmentState.STA);
-            pauserThread.Start();
+            Init();
             Console.WriteLine("enter file name...");
             string fileName = Console.ReadLine().Replace("\"", "");
             Bitmap image = Resize32(Crop1to1(new Bitmap(fileName)));
@@ -55,21 +54,37 @@ namespace roblox32bitpainter_starving_artist_
             });
             foreach (var item in PixelToDrawList)
             {
+                
                 while (Paused)
                 {
-                    //pause when paused is true
+                    if (Restart)
+                    {
+                        break;
+                    }
+                }
+                if (Restart)
+                {
+                    Console.Clear();
+                    Restart = false;
+                    break;
                 }
                 DrawPixel(item.color, new Vector(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
             }
 
-            //repeating
-            pauserThread.Abort();
-            PixelToDrawList = new List<PixelToDraw>();
-            Paused = true;
-            Main(args = null);
+            Main(null);
         }
 
-
+        public static void Init()
+        {
+            if (!pauserThread.IsAlive)
+            {
+                pauserThread.SetApartmentState(ApartmentState.STA);
+                pauserThread.Start();
+            }
+            PixelToDrawList = new List<PixelToDraw>();
+            Paused = true;
+            Restart = false;
+        }
         public static Bitmap Crop1to1(Bitmap image)
         {
             if (image.Width == image.Height)
@@ -148,14 +163,23 @@ namespace roblox32bitpainter_starving_artist_
         {
             while (true)
             {
-                if (Keyboard.IsKeyDown(Key.F1) && Paused == false)
+                if (Keyboard.IsKeyDown(Key.F1))
                 {
-                    Paused = true;
+                    Paused = !Paused;
+                    if (Paused)
+                    {
+                        Console.WriteLine("Paused...");
+                    }
+                    else if (!Paused)
+                    {
+                        Console.WriteLine("Resumed...");
+                    }
                     Thread.Sleep(500);
                 }
-                else if (Keyboard.IsKeyDown(Key.F1) && Paused == true)
+                else if (Keyboard.IsKeyDown(Key.F2))
                 {
-                    Paused = false;
+                    Restart = !Restart;
+                    Console.WriteLine("restart: " + Restart);
                     Thread.Sleep(500);
                 }
             }
