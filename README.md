@@ -2,4 +2,4 @@
 
 Script to paint realistic painting in Starving Artist in GamingPlatform
 
-![Alt Text](demonstration.mp4)
+![demonstration](demonstration.mp4)
