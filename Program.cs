@@ -26,7 +26,7 @@ namespace gamingplatform32bitpainter_starving_artist_
         /*
          * change the coordinate if your resolution is not 2048*1152
          */
-        static Vector newColor = new Vector(1156,877);
+        static Vector newColor = new Vector(1156,873);
         static Vector newColorType = new Vector(1153,795);
         public static int[] pointsX = { 711, 729, 750, 770, 791, 811, 832, 851, 871, 892, 914, 932, 952, 974, 992, 1014, 1034, 1054, 1074, 1093, 1116, 1139, 1156, 1177, 1196, 1214, 1235, 1257, 1277, 1297, 1319, 1337 };
         public static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
@@ -142,7 +142,6 @@ namespace gamingplatform32bitpainter_starving_artist_
 
         static void DrawPixel(Color color, Vector pos)
         {
-            // warning: sometimes will randomly fail to click button
             if (ColorTranslator.ToHtml(Color.FromArgb(color.ToArgb())).ToString() != "#FFFFFF")//white ignore
             {
                 if (curruntColor != color)
@@ -233,7 +232,7 @@ namespace gamingplatform32bitpainter_starving_artist_
                 if (willclick == true)
                 {
                     mouse_event((int)(MouseEventFlags.LEFTDOWN), 0, 0, 0, 0);
-                    Thread.Sleep(30);
+                    Thread.Sleep(20);
                     mouse_event((int)(MouseEventFlags.LEFTUP), 0, 0, 0, 0);
                 }
             }
