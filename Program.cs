@@ -229,11 +229,11 @@ namespace gamingplatform32bitpainter_starving_artist_
 
                 // 0x0001 | 0x8000: Move + Absolute position
                 mouse_event(0x0001 | 0x8000, mic_x, mic_y, 0, 0);
-                Thread.Sleep(10);
+                Thread.Sleep(20);
                 if (willclick == true)
                 {
                     mouse_event((int)(MouseEventFlags.LEFTDOWN), 0, 0, 0, 0);
-                    Thread.Sleep(20);
+                    Thread.Sleep(30);
                     mouse_event((int)(MouseEventFlags.LEFTUP), 0, 0, 0, 0);
                 }
             }
