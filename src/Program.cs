@@ -1,23 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Drawing;
+﻿using System.Drawing;
 using System.Numerics;
-using System.Windows;
-using System.Windows.Forms;
-using System.Threading;
 using System.Runtime.InteropServices;
-using System.Diagnostics;
-using System.Windows.Input;
-using Cursor = System.Windows.Forms.Cursor;
-using System.Security.Cryptography.X509Certificates;
-using System.Drawing.Drawing2D;
-using System.Windows.Media.Media3D;
-using System.Runtime.InteropServices.ComTypes;
 
-namespace roblox32bitpainter_starving_artist_
+namespace StarvingArtistScript
 {
     class Program
     {
@@ -26,20 +11,27 @@ namespace roblox32bitpainter_starving_artist_
         /*
          * change the coordinate if your resolution is not 2048*1152
          */
-        static Vector newColor = new Vector(1156,873);
-        static Vector newColorType = new Vector(1153,795);
-        public static int[] pointsX = { 711, 729, 750, 770, 791, 811, 832, 851, 871, 892, 914, 932, 952, 974, 992, 1014, 1034, 1054, 1074, 1093, 1116, 1139, 1156, 1177, 1196, 1214, 1235, 1257, 1277, 1297, 1319, 1337 };
-        public static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
+        static Vector2 newColor = new Vector2(1156,873);
+        static Vector2 newColorType = new Vector2(1153,795);
+        static int[] pointsX = { 711, 729, 750, 770, 791, 811, 832, 851, 871, 892, 914, 932, 952, 974, 992, 1014, 1034, 1054, 1074, 1093, 1116, 1139, 1156, 1177, 1196, 1214, 1235, 1257, 1277, 1297, 1319, 1337 };
+        static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
 
-        public static List<PixelToDraw> PixelToDrawList = new List<PixelToDraw>();
-        public static bool Paused = true;
-        public static bool Restart = false;
-        public static Thread pauserThread = new Thread(new ThreadStart(pauser));
+        static List<PixelToDraw> PixelToDrawList = new List<PixelToDraw>();
+        static bool Paused = true;
+        static bool Restart = false;
+        static Thread pauserThread = new Thread(new ThreadStart(pauser));
         static void Main(string[] args)
         {
             Init();
             Console.WriteLine("enter file name...");
-            string fileName = Console.ReadLine().Replace("\"", "");
+
+            string? rawInput = Console.ReadLine();
+            string fileName;
+            if (rawInput != null)
+            {
+                fileName = rawInput.Replace("\"", "");
+            }
+
             Bitmap image = Resize32(Crop1to1(new Bitmap(fileName)));
 
             for (int y = 0; y < image.Height; y++)
