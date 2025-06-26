@@ -1,12 +1,19 @@
-﻿using System.Drawing;
-using System.Numerics;
+﻿using System.Numerics;
 using System.Runtime.InteropServices;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SharpHook;
+using SharpHook.Data;
+
+using Rectangle = SixLabors.ImageSharp.Rectangle;
 
 namespace StarvingArtistScript
 {
     class Program
     {
-        static Color curruntColor = Color.Black;
+        static EventSimulator simulator = new();
+        static Rgb24 curruntColor = new Rgb24(0, 0, 0);
 
         /*
          * change the coordinate if your resolution is not 2048*1152
@@ -16,57 +23,57 @@ namespace StarvingArtistScript
         static int[] pointsX = { 711, 729, 750, 770, 791, 811, 832, 851, 871, 892, 914, 932, 952, 974, 992, 1014, 1034, 1054, 1074, 1093, 1116, 1139, 1156, 1177, 1196, 1214, 1235, 1257, 1277, 1297, 1319, 1337 };
         static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
 
-        static List<PixelToDraw> PixelToDrawList = new List<PixelToDraw>();
+        static List<PixelToDraw> PixelToDrawList = new();
         static bool Paused = true;
         static bool Restart = false;
         static Thread pauserThread = new Thread(new ThreadStart(pauser));
         static void Main(string[] args)
         {
-            Init();
-            Console.WriteLine("enter file name...");
+            while (true) {
+                Init();
+                Console.WriteLine("enter file name...");
 
-            string? rawInput = Console.ReadLine();
-            string fileName;
-            if (rawInput != null)
-            {
-                fileName = rawInput.Replace("\"", "");
-            }
-
-            Bitmap image = Resize32(Crop1to1(new Bitmap(fileName)));
-
-            for (int y = 0; y < image.Height; y++)
-            {
-                for (int x = 0; x < image.Width; x++)
+                string? fileName = Console.ReadLine();
+                if (fileName == null)
                 {
-                    Color pixelColor = RoundColor(image.GetPixel(x, y));// <-- round color
-                    
-                    PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector(x,y)));
+                    Console.WriteLine("Error: No input was provided or end of input stream reached.");
+                    fileName = "defaultFileName.txt";
                 }
-            }
-            PixelToDrawList.Sort((e1, e2) =>
-            {
-                return e2.color.ToString().CompareTo(e1.color.ToString());
-            });
-            foreach (var item in PixelToDrawList)
-            {
-                
-                while (Paused)
+
+                Image<Rgb24> image = Resize(Crop1to1(Image.Load<Rgb24>(fileName)));
+
+                for (int y = 0; y < image.Height; y++)
                 {
-                    if (Restart)
+                    for (int x = 0; x < image.Width; x++)
                     {
-                        break;
+                        Rgb24 pixelColor = RoundColor(image[x, y]);
+
+                        PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
                     }
                 }
-                if (Restart)
+                PixelToDrawList.Sort((e1, e2) =>
+                        {
+                        return e2.color.ToString().CompareTo(e1.color.ToString());
+                        });
+                foreach (var item in PixelToDrawList)
                 {
-                    Console.Clear();
-                    Restart = false;
-                    break;
-                }
-                DrawPixel(item.color, new Vector(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
-            }
 
-            Main(null);
+                    while (Paused)
+                    {
+                        if (Restart)
+                        {
+                            break;
+                        }
+                    }
+                    if (Restart)
+                    {
+                        Console.Clear();
+                        Restart = false;
+                        break;
+                    }
+                    DrawPixel(item.color, new Vector2(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
+                }
+            }
         }
 
         public static void Init()
@@ -79,62 +86,81 @@ namespace StarvingArtistScript
             PixelToDrawList = new List<PixelToDraw>();
             Paused = true;
             Restart = false;
+
+            KeyWatcher.Start();
         }
-        public static Bitmap Crop1to1(Bitmap image)
+
+        public static Image<Rgb24> Crop1to1(Image<Rgb24> image)
         {
             if (image.Width == image.Height)
             {
-                //excape if already 1:1
+                // Already 1:1
                 return image;
             }
 
-            int width = image.Width;
-            int height = image.Height;
+            int minDimension = Math.Min(image.Width, image.Height);
 
-            // Determine the smaller dimension
-            int minDimension = Math.Min(width, height);
+            int x = (image.Width - minDimension) / 2;
+            int y = (image.Height - minDimension) / 2;
 
-            // Calculate the cropping coordinates
-            int x = (width - minDimension) / 2;
-            int y = (height - minDimension) / 2;
+            return image.Clone(ctx => ctx.Crop(new Rectangle(x, y, minDimension, minDimension)));
+        }
 
-            // Create a rectangle representing the cropping area
-            Rectangle cropArea = new Rectangle(x, y, minDimension, minDimension);
+        public static Image<Rgb24> Resize(Image<Rgb24> image)
+        {
+            return image.Clone(ctx => ctx.Resize(new ResizeOptions{ Size = new Size(32, 32), Mode = ResizeMode.Stretch, Sampler = KnownResamplers.Bicubic }));
+        }
 
-            // Crop the image and return the result
-            Bitmap croppedImage = new Bitmap(minDimension, minDimension);
-            using (Graphics g = Graphics.FromImage(croppedImage))
+        static Rgb24 RoundColor(Rgb24 color, int nearest = 16)
+        {
+            if (nearest <= 0 || nearest > 255)
             {
-                g.DrawImage(image, new Rectangle(0, 0, minDimension, minDimension), cropArea, GraphicsUnit.Pixel);
+                throw new ArgumentOutOfRangeException(nameof(nearest), "Rounding step must be between 1 and 255.");
             }
-            return croppedImage;
-        }
-
-        public static Bitmap Resize32(Bitmap image)
-        {
-            Bitmap resizedImage = new Bitmap(32, 32);
-            using (var graphics = Graphics.FromImage(resizedImage))
+            byte RoundComponent(byte component, int step)
             {
-                    graphics.InterpolationMode = InterpolationMode.HighQualityBicubic; // set interpolation mode
-                    graphics.DrawImage(image, 0, 0, 32, 32);
+                double divided = (double)component / step;
+                double roundedValue = Math.Round(divided) * step;
+
+                return (byte)Math.Clamp(roundedValue, 0, 255);
             }
-            return resizedImage;
+
+            byte r = RoundComponent(color.R, nearest);
+            byte g = RoundComponent(color.G, nearest);
+            byte b = RoundComponent(color.B, nearest);
+            return new Rgb24(r, g, b);
         }
 
-        //reduce the number of change color action
-        static Color RoundColor(Color color, int nearest = 16)
+        public static void SimulateChar(char c)
         {
-            int red = (int)Math.Round((double)(color.R / nearest)) * nearest;
-            int green = (int)Math.Round((double)(color.G / nearest)) * nearest;
-            int blue = (int)Math.Round((double)(color.B / nearest)) * nearest;
-            int alpha = (int)Math.Round((double)(color.A / nearest)) * nearest;
-            return Color.FromArgb(alpha, red, green, blue);
+            KeyCode key;
+            bool shift = false;
+            if (c >= 'A' && c <= 'Z')
+            {
+                key = (KeyCode)((int)KeyCode.VcA + (c - 'A'));
+                shift = true;
+            }
+            else if (c >= '0' && c <= '9')
+                key = (KeyCode)((int)KeyCode.Vc0 + (c - '0'));
+            else
+                throw new NotSupportedException($"Unsupported character: '{c}'");
+
+            if (shift)
+                simulator.SimulateKeyPress(KeyCode.VcLeftShift);
+
+            simulator.SimulateKeyPress(key);
+            simulator.SimulateKeyRelease(key);
+
+            if (shift)
+                simulator.SimulateKeyRelease(KeyCode.VcLeftShift);
         }
 
-
-        static void DrawPixel(Color color, Vector pos)
+        static void DrawPixel(Rgb24 color, Vector2 pos)
         {
-            if (ColorTranslator.ToHtml(Color.FromArgb(color.ToArgb())).ToString() != "#FFFFFF")//white ignore
+            // Ignore white pixels
+            Rgba32 tmpColor = new Rgba32();
+            color.ToRgba32(ref tmpColor);
+            if (tmpColor.ToHex() != "FFFFFFFF")
             {
                 if (curruntColor != color)
                 {
@@ -144,9 +170,10 @@ namespace StarvingArtistScript
                     Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y), true);
                     Click.click(new System.Drawing.Point((int)newColorType.X, (int)newColorType.Y), false);
                     Click.click(new System.Drawing.Point((int)newColorType.X + 16, (int)newColorType.Y), true);
-                    foreach (char c in ColorTranslator.ToHtml(Color.FromArgb(color.ToArgb())).ToString())
+                    string colorString = tmpColor.ToHex();
+                    for (int i = 0; i < 6; i++)
                     {
-                        SendKeys.SendWait(c.ToString());
+                        SimulateChar(colorString[i]);
                     }
                     Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y + 16), false);
                     Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y+4), false);
@@ -160,7 +187,7 @@ namespace StarvingArtistScript
         {
             while (true)
             {
-                if (Keyboard.IsKeyDown(Key.F1))
+                if (KeyWatcher.IsKeyDown(KeyCode.VcF1))
                 {
                     Paused = !Paused;
                     if (Paused)
@@ -173,7 +200,7 @@ namespace StarvingArtistScript
                     }
                     Thread.Sleep(500);
                 }
-                else if (Keyboard.IsKeyDown(Key.F2))
+                else if (KeyWatcher.IsKeyDown(KeyCode.VcF2))
                 {
                     Restart = !Restart;
                     Console.WriteLine("restart: " + Restart);
@@ -181,6 +208,7 @@ namespace StarvingArtistScript
                 }
             }
         }
+
         public class Click
         {
             [DllImport("user32.dll")]

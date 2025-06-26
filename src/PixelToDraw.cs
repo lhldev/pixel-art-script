@@ -1,16 +1,16 @@
-﻿using System.Drawing;
-using System.Numerics;
+﻿using System.Numerics;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace StarvingArtistScript
 {
     public class PixelToDraw
     {
-        public Color color { get; set; }
+        public Rgb24 color { get; set; }
         public Vector2 point { get; set; }
-        public PixelToDraw(Color colord, Vector2 pointd)
+        public PixelToDraw(Rgb24 color, Vector2 point)
         {
-            color = colord;
-            point = pointd;
+            this.color = color;
+            this.point = point;
         }
     }
 }
