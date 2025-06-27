@@ -24,20 +24,53 @@ namespace StarvingArtistScript
         static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
 
         static List<PixelToDraw> PixelToDrawList = new();
+        static bool Prompt = true;
         static bool Paused = true;
         static bool Restart = false;
-        static Thread pauserThread = new Thread(new ThreadStart(pauser));
+        static SimpleGlobalHook hook = new SimpleGlobalHook();
         static void Main(string[] args)
         {
-            while (true) {
-                Init();
-                Console.WriteLine("enter file name...");
+            hook.KeyPressed += (_, e) => 
+            {
+                if (Prompt)
+                    return;
+                
+                if (e.Data.KeyCode == KeyCode.VcP) 
+                {
+                    Paused = !Paused;
+                    if (Paused)
+                    {
+                        Console.WriteLine("Paused...");
+                    }
+                    else if (!Paused)
+                    {
+                        Console.WriteLine("Resumed...");
+                    }
+                    Thread.Sleep(500);
+                }
+                else if (e.Data.KeyCode == KeyCode.VcR) {
+                    Restart = !Restart;
+                    Console.WriteLine("restarting...");
+                    Thread.Sleep(500);
+                }
+            };
+            Task.Run(() => hook.Run());
 
+            while (true) {
+                Paused = true;
+                Restart = false;
+                Prompt = true;
+                PixelToDrawList = new List<PixelToDraw>();
+
+                Console.WriteLine("Enter file path...");
                 string? fileName = Console.ReadLine();
                 if (fileName == null)
                 {
                     Console.WriteLine("Error: No input was provided or end of input stream reached.");
-                    fileName = "defaultFileName.txt";
+                    continue;
+                } else {
+                    Prompt = false;
+                    Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
                 }
 
                 Image<Rgb24> image = Resize(Crop1to1(Image.Load<Rgb24>(fileName)));
@@ -51,13 +84,10 @@ namespace StarvingArtistScript
                         PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
                     }
                 }
-                PixelToDrawList.Sort((e1, e2) =>
-                        {
-                        return e2.color.ToString().CompareTo(e1.color.ToString());
-                        });
+
+                PixelToDrawList.Sort((e1, e2) => { return e2.color.ToString().CompareTo(e1.color.ToString()); });
                 foreach (var item in PixelToDrawList)
                 {
-
                     while (Paused)
                     {
                         if (Restart)
@@ -67,27 +97,11 @@ namespace StarvingArtistScript
                     }
                     if (Restart)
                     {
-                        Console.Clear();
-                        Restart = false;
                         break;
                     }
                     DrawPixel(item.color, new Vector2(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
                 }
             }
-        }
-
-        public static void Init()
-        {
-            if (!pauserThread.IsAlive)
-            {
-                pauserThread.SetApartmentState(ApartmentState.STA);
-                pauserThread.Start();
-            }
-            PixelToDrawList = new List<PixelToDraw>();
-            Paused = true;
-            Restart = false;
-
-            KeyWatcher.Start();
         }
 
         public static Image<Rgb24> Crop1to1(Image<Rgb24> image)
@@ -180,32 +194,6 @@ namespace StarvingArtistScript
                     Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y), true);
                 }
                 Click.click(new System.Drawing.Point((int)pos.X, (int)pos.Y), true);
-            }
-        }
-
-        public static void pauser()
-        {
-            while (true)
-            {
-                if (KeyWatcher.IsKeyDown(KeyCode.VcF1))
-                {
-                    Paused = !Paused;
-                    if (Paused)
-                    {
-                        Console.WriteLine("Paused...");
-                    }
-                    else if (!Paused)
-                    {
-                        Console.WriteLine("Resumed...");
-                    }
-                    Thread.Sleep(500);
-                }
-                else if (KeyWatcher.IsKeyDown(KeyCode.VcF2))
-                {
-                    Restart = !Restart;
-                    Console.WriteLine("restart: " + Restart);
-                    Thread.Sleep(500);
-                }
             }
         }
 
