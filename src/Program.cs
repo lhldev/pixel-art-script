@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using System.Runtime.InteropServices;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -12,25 +11,28 @@ namespace StarvingArtistScript
 {
     class Program
     {
-        static EventSimulator simulator = new();
+        static EventSimulator Simulator = new();
         static Rgb24 curruntColor = new Rgb24(0, 0, 0);
 
         /*
          * change the coordinate if your resolution is not 2048*1152
          */
-        static Vector2 newColor = new Vector2(1156,873);
-        static Vector2 newColorType = new Vector2(1153,795);
-        static int[] pointsX = { 711, 729, 750, 770, 791, 811, 832, 851, 871, 892, 914, 932, 952, 974, 992, 1014, 1034, 1054, 1074, 1093, 1116, 1139, 1156, 1177, 1196, 1214, 1235, 1257, 1277, 1297, 1319, 1337 };
-        static int[] pointsY = { 191, 208, 231, 249, 268, 291, 312, 329, 353, 371, 391, 410, 431, 451, 474, 492, 509, 532, 554, 573, 593, 614, 633, 656, 675, 693, 716, 736, 757, 778, 796, 816 };
+        static float DisplayScaling = 1.5f; // 150%
+        static Vector2 NewColor = new Vector2(1280,1060);
+        static Vector2 NewColorText = new Vector2(1280,940);
+        static Vector2 FirstPoint = new Vector2(745, 230);
+        static Vector2 LastPoint = new Vector2(1500, 990);
+        static float PointOffset = (float)(LastPoint.X - FirstPoint.X) / 31.0f; 
+        static int Wait = 50;
 
         static List<PixelToDraw> PixelToDrawList = new();
         static bool Prompt = true;
         static bool Paused = true;
         static bool Restart = false;
-        static SimpleGlobalHook hook = new SimpleGlobalHook();
+        static SimpleGlobalHook Hook = new SimpleGlobalHook();
         static void Main(string[] args)
         {
-            hook.KeyPressed += (_, e) => 
+            Hook.KeyPressed += (_, e) => 
             {
                 if (Prompt)
                     return;
@@ -54,7 +56,7 @@ namespace StarvingArtistScript
                     Thread.Sleep(500);
                 }
             };
-            Task.Run(() => hook.Run());
+            Task.Run(() => Hook.Run());
 
             while (true) {
                 Paused = true;
@@ -99,7 +101,7 @@ namespace StarvingArtistScript
                     {
                         break;
                     }
-                    DrawPixel(item.color, new Vector2(pointsX[(int)item.point.X], pointsY[(int)item.point.Y]));
+                    DrawPixel(item.color, new Vector2((int)Math.Round(item.point.X * PointOffset + FirstPoint.X), (int)Math.Round(item.point.Y * PointOffset + FirstPoint.Y)));
                 }
             }
         }
@@ -133,8 +135,8 @@ namespace StarvingArtistScript
             }
             byte RoundComponent(byte component, int step)
             {
-                double divided = (double)component / step;
-                double roundedValue = Math.Round(divided) * step;
+                float divided = (float)component / step;
+                float roundedValue = (float)Math.Round(divided) * step;
 
                 return (byte)Math.Clamp(roundedValue, 0, 255);
             }
@@ -160,13 +162,39 @@ namespace StarvingArtistScript
                 throw new NotSupportedException($"Unsupported character: '{c}'");
 
             if (shift)
-                simulator.SimulateKeyPress(KeyCode.VcLeftShift);
+                Simulator.SimulateKeyPress(KeyCode.VcLeftShift);
 
-            simulator.SimulateKeyPress(key);
-            simulator.SimulateKeyRelease(key);
+            Simulator.SimulateKeyPress(key);
+            Simulator.SimulateKeyRelease(key);
 
             if (shift)
-                simulator.SimulateKeyRelease(KeyCode.VcLeftShift);
+                Simulator.SimulateKeyRelease(KeyCode.VcLeftShift);
+        }
+
+        public static void RecognisedMouseMovement(short x, short y, int steps = 5, int delayMs = 5)
+        {
+            Simulator.SimulateMouseMovement(x, (short)(y + steps));
+            Thread.Sleep(delayMs);
+            Simulator.SimulateMouseMovement((short)(x + steps), y);
+            Thread.Sleep(delayMs);
+            Simulator.SimulateMouseMovement((short)(x - steps), y);
+            Thread.Sleep(delayMs);
+            Simulator.SimulateMouseMovement(x, (short)(y - steps));
+            Thread.Sleep(delayMs);
+            Simulator.SimulateMouseMovement(x, y);
+            Thread.Sleep(Wait);
+        }
+
+        static void Click(short x, short y)
+        {
+            short realX = (short)Math.Round(x / DisplayScaling);
+            short realY = (short)Math.Round(y / DisplayScaling);
+            RecognisedMouseMovement(realX, realY);
+
+            Simulator.SimulateMousePress(MouseButton.Button1);
+            Thread.Sleep(Wait);
+            Simulator.SimulateMouseRelease(MouseButton.Button1);
+            Thread.Sleep(Wait);
         }
 
         static void DrawPixel(Rgb24 color, Vector2 pos)
@@ -179,72 +207,18 @@ namespace StarvingArtistScript
                 if (curruntColor != color)
                 {
                     curruntColor = color;
-                    Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y + 16), false);
-                    Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y + 4), false);
-                    Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y), true);
-                    Click.click(new System.Drawing.Point((int)newColorType.X, (int)newColorType.Y), false);
-                    Click.click(new System.Drawing.Point((int)newColorType.X + 16, (int)newColorType.Y), true);
+                    Click((short)NewColor.X, (short)(NewColor.Y));
+                    Click((short)NewColorText.X, (short)NewColorText.Y);
                     string colorString = tmpColor.ToHex();
                     for (int i = 0; i < 6; i++)
                     {
                         SimulateChar(colorString[i]);
                     }
-                    Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y + 16), false);
-                    Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y+4), false);
-                    Click.click(new System.Drawing.Point((int)newColor.X, (int)newColor.Y), true);
+                    Thread.Sleep(Wait);
+                    Click((short)NewColor.X, (short)(NewColor.Y));
                 }
-                Click.click(new System.Drawing.Point((int)pos.X, (int)pos.Y), true);
+                Click((short)pos.X, (short)pos.Y);
             }
-        }
-
-        public class Click
-        {
-            [DllImport("user32.dll")]
-            static extern void mouse_event(int dwFlags, int dx, int dy,
-                      int dwData, int dwExtraInfo);
-
-            [Flags]
-            public enum MouseEventFlags
-            {
-                LEFTDOWN = 0x00000002,
-                LEFTUP = 0x00000004,
-                MIDDLEDOWN = 0x00000020,
-                MIDDLEUP = 0x00000040,
-                MOVE = 0x00000001,
-                ABSOLUTE = 0x00008000,
-                RIGHTDOWN = 0x00000008,
-                RIGHTUP = 0x00000010
-            }
-            [DllImport("User32.dll",
-            EntryPoint = "GetSystemMetrics",
-            CallingConvention = CallingConvention.Winapi)]
-            internal static extern int InternalGetSystemMetrics(int value);
-
-            public static void click(System.Drawing.Point p, bool willclick)
-            {
-                // Move mouse cursor to absolute position to_x, to_y and make left button click:
-                int to_x = p.X;
-                int to_y = p.Y;
-
-                int screenWidth = InternalGetSystemMetrics(0);
-                int screenHeight = InternalGetSystemMetrics(1);
-
-                // Mickey X coordinate
-                int mic_x = (int)(to_x * 65536.0 / screenWidth);
-                // Mickey Y coordinate
-                int mic_y = (int)(to_y * 65536.0 / screenHeight);
-
-                // 0x0001 | 0x8000: Move + Absolute position
-                mouse_event(0x0001 | 0x8000, mic_x, mic_y, 0, 0);
-                Thread.Sleep(20);
-                if (willclick == true)
-                {
-                    mouse_event((int)(MouseEventFlags.LEFTDOWN), 0, 0, 0, 0);
-                    Thread.Sleep(20);
-                    mouse_event((int)(MouseEventFlags.LEFTUP), 0, 0, 0, 0);
-                }
-            }
-
         }
     }
 }
