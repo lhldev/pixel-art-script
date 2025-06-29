@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace StarvingArtistScript
+namespace StarvingArtistsScript
 {
     public class PixelToDraw
     {

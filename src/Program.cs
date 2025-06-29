@@ -7,36 +7,27 @@ using SharpHook.Data;
 
 using Rectangle = SixLabors.ImageSharp.Rectangle;
 
-namespace StarvingArtistScript
+namespace StarvingArtistsScript
 {
     class Program
     {
         static EventSimulator Simulator = new();
         static Rgb24 curruntColor = new Rgb24(0, 0, 0);
-
-        /*
-         * change the coordinate if your resolution is not 2048*1152
-         */
-        static float DisplayScaling = 1.5f; // 150%
-        static Vector2 NewColor = new Vector2(1280,1060);
-        static Vector2 NewColorText = new Vector2(1280,940);
-        static Vector2 FirstPoint = new Vector2(745, 230);
-        static Vector2 LastPoint = new Vector2(1500, 990);
-        static float PointOffset = (float)(LastPoint.X - FirstPoint.X) / 31.0f; 
         static int Wait = 50;
 
         static List<PixelToDraw> PixelToDrawList = new();
         static bool Prompt = true;
         static bool Paused = true;
         static bool Restart = false;
-        static SimpleGlobalHook Hook = new SimpleGlobalHook();
+        public static SimpleGlobalHook Hook = new SimpleGlobalHook();
         static void Main(string[] args)
         {
+            Task.Run(() => Hook.Run());
             Hook.KeyPressed += (_, e) => 
             {
                 if (Prompt)
                     return;
-                
+
                 if (e.Data.KeyCode == KeyCode.VcP) 
                 {
                     Paused = !Paused;
@@ -50,58 +41,73 @@ namespace StarvingArtistScript
                     }
                     Thread.Sleep(500);
                 }
-                else if (e.Data.KeyCode == KeyCode.VcR) {
+                else if (e.Data.KeyCode == KeyCode.VcR) 
+                {
                     Restart = !Restart;
-                    Console.WriteLine("restarting...");
+                    Console.WriteLine("Restarting...");
                     Thread.Sleep(500);
                 }
             };
-            Task.Run(() => Hook.Run());
 
+            bool firstTime = true;
             while (true) {
-                Paused = true;
-                Restart = false;
-                Prompt = true;
-                PixelToDrawList = new List<PixelToDraw>();
-
-                Console.WriteLine("Enter file path...");
-                string? fileName = Console.ReadLine();
-                if (fileName == null)
+                try 
                 {
-                    Console.WriteLine("Error: No input was provided or end of input stream reached.");
-                    continue;
-                } else {
-                    Prompt = false;
-                    Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
-                }
-
-                Image<Rgb24> image = Resize(Crop1to1(Image.Load<Rgb24>(fileName)));
-
-                for (int y = 0; y < image.Height; y++)
-                {
-                    for (int x = 0; x < image.Width; x++)
+                    if (firstTime)
                     {
-                        Rgb24 pixelColor = RoundColor(image[x, y]);
-
-                        PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
+                        CoordinateReader.FindCoord();
+                        firstTime = false;
                     }
-                }
 
-                PixelToDrawList.Sort((e1, e2) => { return e2.color.ToString().CompareTo(e1.color.ToString()); });
-                foreach (var item in PixelToDrawList)
-                {
-                    while (Paused)
+                    Paused = true;
+                    Restart = false;
+                    Prompt = true;
+                    PixelToDrawList = new List<PixelToDraw>();
+
+                    Console.WriteLine("Enter file path...");
+                    string? fileName = Console.ReadLine();
+                    if (fileName == null)
                     {
+                        throw new ArgumentNullException("No input was provided or end of input stream reached.");
+                    } else {
+                        Prompt = false;
+                    }
+                    Image<Rgb24> image = Resize(Crop1to1(Image.Load<Rgb24>(fileName)));
+
+                    Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
+
+                    for (int y = 0; y < image.Height; y++)
+                    {
+                        for (int x = 0; x < image.Width; x++)
+                        {
+                            Rgb24 pixelColor = RoundColor(image[x, y]);
+
+                            PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
+                        }
+                    }
+
+                    PixelToDrawList.Sort((e1, e2) => { return e2.color.ToString().CompareTo(e1.color.ToString()); });
+                    foreach (var item in PixelToDrawList)
+                    {
+                        while (Paused)
+                        {
+                            if (Restart)
+                            {
+                                break;
+                            }
+                            Thread.Sleep(50);
+                        }
                         if (Restart)
                         {
                             break;
                         }
+                        DrawPixel(item.color, new Vector2((int)Math.Round(item.point.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X), (int)Math.Round(item.point.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)));
                     }
-                    if (Restart)
-                    {
-                        break;
-                    }
-                    DrawPixel(item.color, new Vector2((int)Math.Round(item.point.X * PointOffset + FirstPoint.X), (int)Math.Round(item.point.Y * PointOffset + FirstPoint.Y)));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("An unexpected error occurred. " + ex.Message);
+                    Console.WriteLine("Restarting...");
                 }
             }
         }
@@ -187,9 +193,7 @@ namespace StarvingArtistScript
 
         static void Click(short x, short y)
         {
-            short realX = (short)Math.Round(x / DisplayScaling);
-            short realY = (short)Math.Round(y / DisplayScaling);
-            RecognisedMouseMovement(realX, realY);
+            RecognisedMouseMovement(x, y);
 
             Simulator.SimulateMousePress(MouseButton.Button1);
             Thread.Sleep(Wait);
@@ -207,15 +211,15 @@ namespace StarvingArtistScript
                 if (curruntColor != color)
                 {
                     curruntColor = color;
-                    Click((short)NewColor.X, (short)(NewColor.Y));
-                    Click((short)NewColorText.X, (short)NewColorText.Y);
+                    Click((short)CoordinateReader.NewColor.X, (short)(CoordinateReader.NewColor.Y));
+                    Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
                     string colorString = tmpColor.ToHex();
                     for (int i = 0; i < 6; i++)
                     {
                         SimulateChar(colorString[i]);
                     }
                     Thread.Sleep(Wait);
-                    Click((short)NewColor.X, (short)(NewColor.Y));
+                    Click((short)CoordinateReader.NewColor.X, (short)(CoordinateReader.NewColor.Y));
                 }
                 Click((short)pos.X, (short)pos.Y);
             }
