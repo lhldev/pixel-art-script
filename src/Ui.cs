@@ -1,21 +1,24 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia;
 
-public static class DpiHelper
+namespace StarvingArtistsScript
 {
-    public static void MakeDpiAware()
+    public static class DpiHelper
     {
-        var lifetime = new ClassicDesktopStyleApplicationLifetime();
-        BuildAvaloniaApp().SetupWithLifetime(lifetime);
+        public static void MakeDpiAware()
+        {
+            var lifetime = new ClassicDesktopStyleApplicationLifetime();
+            BuildAvaloniaApp().SetupWithLifetime(lifetime);
+        }
+
+        public static AppBuilder BuildAvaloniaApp()
+        {
+            return AppBuilder.Configure<App>().UsePlatformDetect().LogToTrace();
+        }
     }
 
-    public static AppBuilder BuildAvaloniaApp()
+    public class App : Application
     {
-        return AppBuilder.Configure<App>().UsePlatformDetect().LogToTrace();
+        public override void Initialize() {}
     }
-}
-
-public class App : Application
-{
-    public override void Initialize() {}
 }
