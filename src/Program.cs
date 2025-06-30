@@ -23,6 +23,25 @@ namespace StarvingArtistsScript
         public static SimpleGlobalHook Hook = new SimpleGlobalHook();
         static void Main(string[] args)
         {
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "-w" && i + 1 < args.Length && int.TryParse(args[i + 1], out var waitVal))
+                {
+                    Wait = waitVal;
+                    i++;
+                }
+                else if (args[i] == "-r" && i + 1 < args.Length && int.TryParse(args[i + 1], out var roundVal))
+                {
+                    RoundValue = roundVal;
+                    i++;
+                }
+            }
+
+            if (args.Length > 0) {
+                Console.WriteLine($"Wait = {Wait} ms");
+                Console.WriteLine($"RoundValue = {RoundValue}");
+            }
+
             DpiHelper.MakeDpiAware();
             Task.Run(() => Hook.Run());
             Hook.KeyPressed += (_, e) => 
