@@ -14,6 +14,7 @@ namespace StarvingArtistsScript
         static EventSimulator Simulator = new();
         static Rgb24 curruntColor = new Rgb24(0, 0, 0);
         static int Wait = 50;
+        static int RoundValue = 16;
 
         static List<PixelToDraw> PixelToDrawList = new();
         static bool Prompt = true;
@@ -22,6 +23,7 @@ namespace StarvingArtistsScript
         public static SimpleGlobalHook Hook = new SimpleGlobalHook();
         static void Main(string[] args)
         {
+            DpiHelper.MakeDpiAware();
             Task.Run(() => Hook.Run());
             Hook.KeyPressed += (_, e) => 
             {
@@ -103,6 +105,7 @@ namespace StarvingArtistsScript
                         }
                         DrawPixel(item.color, new Vector2((int)Math.Round(item.point.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X), (int)Math.Round(item.point.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)));
                     }
+                    Console.WriteLine("Done! Restarting...");
                 }
                 catch (Exception ex)
                 {
@@ -133,11 +136,11 @@ namespace StarvingArtistsScript
             return image.Clone(ctx => ctx.Resize(new ResizeOptions{ Size = new Size(32, 32), Mode = ResizeMode.Stretch, Sampler = KnownResamplers.Bicubic }));
         }
 
-        static Rgb24 RoundColor(Rgb24 color, int nearest = 16)
+        static Rgb24 RoundColor(Rgb24 color)
         {
-            if (nearest <= 0 || nearest > 255)
+            if (RoundValue <= 0 || RoundValue > 255)
             {
-                throw new ArgumentOutOfRangeException(nameof(nearest), "Rounding step must be between 1 and 255.");
+                throw new ArgumentOutOfRangeException(nameof(RoundValue), "Rounding step must be between 1 and 255.");
             }
             byte RoundComponent(byte component, int step)
             {
@@ -147,9 +150,9 @@ namespace StarvingArtistsScript
                 return (byte)Math.Clamp(roundedValue, 0, 255);
             }
 
-            byte r = RoundComponent(color.R, nearest);
-            byte g = RoundComponent(color.G, nearest);
-            byte b = RoundComponent(color.B, nearest);
+            byte r = RoundComponent(color.R, RoundValue);
+            byte g = RoundComponent(color.G, RoundValue);
+            byte b = RoundComponent(color.B, RoundValue);
             return new Rgb24(r, g, b);
         }
 
