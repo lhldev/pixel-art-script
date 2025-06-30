@@ -1,11 +1,8 @@
 ﻿using System.Numerics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 using SharpHook;
 using SharpHook.Data;
-
-using Rectangle = SixLabors.ImageSharp.Rectangle;
 
 namespace StarvingArtistsScript
 {
@@ -70,7 +67,8 @@ namespace StarvingArtistsScript
                 }
             };
 
-            bool firstTime = true;
+            bool firstTime = false; //TEMP
+            // bool firstTime = true;
             while (true) {
                 try 
                 {
@@ -93,8 +91,13 @@ namespace StarvingArtistsScript
                     } else {
                         Prompt = false;
                     }
-                    Image<Rgb24> image = Resize(Crop1to1(Image.Load<Rgb24>(fileName)));
+                    //TEMP
+                    Image<Rgb24> croppedImage = ImageHelper.Crop1to1(Image.Load<Rgb24>(fileName));
+                    Image<Rgb24> image = ImageHelper.Resize(croppedImage);
 
+                    //TEMP
+                    Image<Rgb24> pixelatedImage = ImageHelper.ResizeBack(image, croppedImage);
+                    ImageHelper.DisplayImage(pixelatedImage);
                     Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
 
                     for (int y = 0; y < image.Height; y++)
@@ -134,32 +137,11 @@ namespace StarvingArtistsScript
             }
         }
 
-        public static Image<Rgb24> Crop1to1(Image<Rgb24> image)
+        public static Rgb24 RoundColor(Rgb24 color)
         {
-            if (image.Width == image.Height)
+            if (Program.RoundValue <= 0 || Program.RoundValue > 255)
             {
-                // Already 1:1
-                return image;
-            }
-
-            int minDimension = Math.Min(image.Width, image.Height);
-
-            int x = (image.Width - minDimension) / 2;
-            int y = (image.Height - minDimension) / 2;
-
-            return image.Clone(ctx => ctx.Crop(new Rectangle(x, y, minDimension, minDimension)));
-        }
-
-        public static Image<Rgb24> Resize(Image<Rgb24> image)
-        {
-            return image.Clone(ctx => ctx.Resize(new ResizeOptions{ Size = new Size(32, 32), Mode = ResizeMode.Stretch, Sampler = KnownResamplers.Bicubic }));
-        }
-
-        static Rgb24 RoundColor(Rgb24 color)
-        {
-            if (RoundValue <= 0 || RoundValue > 255)
-            {
-                throw new ArgumentOutOfRangeException(nameof(RoundValue), "Rounding step must be between 1 and 255.");
+                throw new ArgumentOutOfRangeException(nameof(Program.RoundValue), "Rounding step must be between 1 and 255.");
             }
             byte RoundComponent(byte component, int step)
             {
@@ -169,9 +151,9 @@ namespace StarvingArtistsScript
                 return (byte)Math.Clamp(roundedValue, 0, 255);
             }
 
-            byte r = RoundComponent(color.R, RoundValue);
-            byte g = RoundComponent(color.G, RoundValue);
-            byte b = RoundComponent(color.B, RoundValue);
+            byte r = RoundComponent(color.R, Program.RoundValue);
+            byte g = RoundComponent(color.G, Program.RoundValue);
+            byte b = RoundComponent(color.B, Program.RoundValue);
             return new Rgb24(r, g, b);
         }
 
