@@ -1,9 +1,6 @@
 ﻿using System.Numerics;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Drawing;
-using SixLabors.ImageSharp.Drawing.Processing;
 using SharpHook;
 using SharpHook.Data;
 
@@ -99,23 +96,20 @@ namespace StarvingArtistsScript
                         Prompt = false;
                     }
                     Image<Rgb24> processedImage = Image.Load<Rgb24>(fileName).Preprocess();
-                    Image<Rgb24> image = processedImage.Pixelate();
+                    Image<Rgb24> pixelated = processedImage.Pixelate();
 
                     //TEMP
-                    Image<Rgb24> preview = image.Preview();
-                    IPath shape = preview.GenShape(new Vector2(2, 2), 2);
-                    var excludeMask = new Image<L8>(preview.Width, preview.Height);
-                    Rgb24 colorOut;
-                    Console.WriteLine($"image rmse: {ImageHelper.Rmse(preview, processedImage)}, shape rmse: {processedImage.ProcessShape(shape, excludeMask, out colorOut)}");
-                    preview.Mutate(ctx => ctx.Fill(colorOut, shape));
-                    preview.DisplayImage();
+                    Image<Rgb24> preview = pixelated.Preview();
+                    Image<Rgb24> generated = preview.GenImage(processedImage);
+                    Console.WriteLine($"image rmse: {ImageHelper.Rmse(preview, processedImage)}, shape rmse: {ImageHelper.Rmse(generated, processedImage)}");
+                    generated.DisplayImage();
                     Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
 
-                    for (int y = 0; y < image.Height; y++)
+                    for (int y = 0; y < pixelated.Height; y++)
                     {
-                        for (int x = 0; x < image.Width; x++)
+                        for (int x = 0; x < pixelated.Width; x++)
                         {
-                            Rgb24 pixelColor = RoundColor(image[x, y]);
+                            Rgb24 pixelColor = RoundColor(pixelated[x, y]);
 
                             PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x, y)));
                         }

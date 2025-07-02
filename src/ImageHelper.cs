@@ -70,7 +70,7 @@ namespace StarvingArtistsScript
             return image.Width / 32.0f;
         }
 
-        public static double Rmse(Image<Rgb24> image, Image<Rgb24> original)
+        public static double Rmse(this Image<Rgb24> image, Image<Rgb24> original)
         {
             Debug.Assert(image.Width == original.Width);
             Debug.Assert(image.Height == original.Height);
@@ -101,16 +101,16 @@ namespace StarvingArtistsScript
         }
 
         // Returns the rmse of the resulting shape
-        public static double ProcessShape(this Image<Rgb24> image, IPath shape, Image<L8> excludeMask, out Rgb24 color)
+        public static double ProcessShape(this Image<Rgb24> original, IPath shape, Image<L8> excludeMask, out Rgb24 color)
         {
-            using var mask = new Image<L8>(image.Width, image.Height);
+            using var mask = new Image<L8>(original.Width, original.Height);
             mask.Mutate(ctx => ctx.Fill(Color.White, shape));
 
             RectangleF bounds = shape.Bounds;
             int xMin = Math.Max(0, (int)Math.Floor(bounds.Left));
             int yMin = Math.Max(0, (int)Math.Floor(bounds.Top));
-            int xMax = Math.Min(image.Width - 1, (int)Math.Ceiling(bounds.Right));
-            int yMax = Math.Min(image.Height - 1, (int)Math.Ceiling(bounds.Bottom));
+            int xMax = Math.Min(original.Width - 1, (int)Math.Ceiling(bounds.Right));
+            int yMax = Math.Min(original.Height - 1, (int)Math.Ceiling(bounds.Bottom));
 
             long rSum = 0, gSum = 0, bSum = 0;
             int count = 0;
@@ -121,7 +121,7 @@ namespace StarvingArtistsScript
                 {
                     if (mask[x, y].PackedValue >= 128 && excludeMask[x, y].PackedValue < 128)
                     {
-                        Rgb24 pixel = image[x, y];
+                        Rgb24 pixel = original[x, y];
                         rSum += pixel.R;
                         gSum += pixel.G;
                         bSum += pixel.B;
@@ -144,7 +144,7 @@ namespace StarvingArtistsScript
                 {
                     if (mask[x, y].PackedValue >= 128 && excludeMask[x, y].PackedValue < 128)
                     {
-                        Rgb24 pixel = image[x, y];
+                        Rgb24 pixel = original[x, y];
                         double valueR = rAvg - pixel.R;
                         double valueG = gAvg - pixel.G;
                         double valueB = bAvg - pixel.B;
@@ -156,6 +156,24 @@ namespace StarvingArtistsScript
             }
             color = new Rgb24((byte)Math.Round(rAvg), (byte)Math.Round(gAvg), (byte)Math.Round(bAvg));
             return Math.Sqrt(sum / (count * 3));
+        }
+
+        public static Image<Rgb24> GenImage(this Image<Rgb24> preview, Image<Rgb24> original)
+        {
+            Image<Rgb24> processing = preview.Clone();
+            var excludeMask = new Image<L8>(processing.Width, processing.Height);
+            Rgb24 colorOut;
+            for (int x = 0; x < 32; x++)
+            {
+                for (int y = 0; y < 32; y++)
+                {
+                    IPath shape = processing.GenShape(new Vector2(x, y), 1);
+                    original.ProcessShape(shape, excludeMask, out colorOut);
+                    processing.Mutate(ctx => ctx.Fill(colorOut, shape));
+                }
+            }
+
+            return processing;
         }
     }
 }
