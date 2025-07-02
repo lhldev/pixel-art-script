@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
 using SharpHook;
 using SharpHook.Data;
 
@@ -34,19 +37,20 @@ namespace StarvingArtistsScript
                 }
             }
 
-            if (args.Length > 0) {
+            if (args.Length > 0)
+            {
                 Console.WriteLine($"Wait = {Wait} ms");
                 Console.WriteLine($"RoundValue = {RoundValue}");
             }
 
             DpiHelper.MakeDpiAware();
             Task.Run(() => Hook.Run());
-            Hook.KeyPressed += (_, e) => 
+            Hook.KeyPressed += (_, e) =>
             {
                 if (Prompt)
                     return;
 
-                if (e.Data.KeyCode == KeyCode.VcP) 
+                if (e.Data.KeyCode == KeyCode.VcP)
                 {
                     Paused = !Paused;
                     if (Paused)
@@ -59,7 +63,7 @@ namespace StarvingArtistsScript
                     }
                     Thread.Sleep(500);
                 }
-                else if (e.Data.KeyCode == KeyCode.VcR) 
+                else if (e.Data.KeyCode == KeyCode.VcR)
                 {
                     Restart = !Restart;
                     Console.WriteLine("Restarting...");
@@ -69,8 +73,9 @@ namespace StarvingArtistsScript
 
             bool firstTime = false; //TEMP
             // bool firstTime = true;
-            while (true) {
-                try 
+            while (true)
+            {
+                try
                 {
                     if (firstTime)
                     {
@@ -88,16 +93,22 @@ namespace StarvingArtistsScript
                     if (fileName == null)
                     {
                         throw new ArgumentNullException("No input was provided or end of input stream reached.");
-                    } else {
+                    }
+                    else
+                    {
                         Prompt = false;
                     }
-                    //TEMP
-                    Image<Rgb24> croppedImage = ImageHelper.Crop1to1(Image.Load<Rgb24>(fileName));
-                    Image<Rgb24> image = ImageHelper.Resize(croppedImage);
+                    Image<Rgb24> processedImage = Image.Load<Rgb24>(fileName).Preprocess();
+                    Image<Rgb24> image = processedImage.Pixelate();
 
                     //TEMP
-                    Image<Rgb24> pixelatedImage = ImageHelper.ResizeBack(image, croppedImage);
-                    ImageHelper.DisplayImage(pixelatedImage);
+                    Image<Rgb24> preview = image.Preview();
+                    IPath shape = preview.GenShape(new Vector2(2, 2), 2);
+                    var excludeMask = new Image<L8>(preview.Width, preview.Height);
+                    Rgb24 colorOut;
+                    Console.WriteLine($"image rmse: {ImageHelper.Rmse(preview, processedImage)}, shape rmse: {processedImage.ProcessShape(shape, excludeMask, out colorOut)}");
+                    preview.Mutate(ctx => ctx.Fill(colorOut, shape));
+                    preview.DisplayImage();
                     Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
 
                     for (int y = 0; y < image.Height; y++)
@@ -106,7 +117,7 @@ namespace StarvingArtistsScript
                         {
                             Rgb24 pixelColor = RoundColor(image[x, y]);
 
-                            PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
+                            PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x, y)));
                         }
                     }
 
@@ -146,7 +157,7 @@ namespace StarvingArtistsScript
             byte RoundComponent(byte component, int step)
             {
                 float divided = (float)component / step;
-                float roundedValue = (float)Math.Round(divided) * step;
+                float roundedValue = MathF.Round(divided) * step;
 
                 return (byte)Math.Clamp(roundedValue, 0, 255);
             }

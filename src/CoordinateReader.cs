@@ -74,7 +74,7 @@ namespace StarvingArtistsScript
                 }
             }
 
-            PointOffset = (float)(LastPoint.X - FirstPoint.X) / 31.0f; 
+            PointOffset = (float)(LastPoint.X - FirstPoint.X) / 31.0f;
         }
 
         private static void OnMousePressed(object? sender, MouseHookEventArgs e)

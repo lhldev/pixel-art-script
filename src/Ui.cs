@@ -19,6 +19,6 @@ namespace StarvingArtistsScript
 
     public class App : Application
     {
-        public override void Initialize() {}
+        public override void Initialize() { }
     }
 }
