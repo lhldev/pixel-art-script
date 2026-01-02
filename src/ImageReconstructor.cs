@@ -7,6 +7,10 @@ namespace StarvingArtistsScript
     public class ImageReconstructor
     {
         private const int GridSize = 32;
+        // Circle size multiplier: size N has radius = cellWidth * (N * RadiusMultiplier)
+        // Size 1: radius = 0.5 cell width, Size 2: radius = 1.0 cell width, etc.
+        private const double RadiusMultiplier = 0.5;
+        
         private Image<Rgb24> sourceImage;
         private GridCell[,] grid;
         private int cellWidth;
@@ -319,7 +323,7 @@ namespace StarvingArtistsScript
             // Size 1: radius = cellWidth * 0.5
             // Size 2: radius = cellWidth * 1.0
             // Size 3: radius = cellWidth * 1.5
-            double radius = cellWidth * (size * 0.5);
+            double radius = cellWidth * (size * RadiusMultiplier);
 
             // Mask size needs to accommodate the full circle
             int maskSize = (int)Math.Ceiling(radius * 2) + 1;

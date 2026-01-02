@@ -12,7 +12,7 @@ namespace StarvingArtistsScript
     class Program
     {
         static EventSimulator Simulator = new();
-        static Rgb24 curruntColor = new Rgb24(0, 0, 0);
+        static Rgb24 currentColor = new Rgb24(0, 0, 0);
         static int Wait = 50;
         static int RoundValue = 16;
         static bool UseShapeReconstruction = false;
@@ -262,9 +262,9 @@ namespace StarvingArtistsScript
             color.ToRgba32(ref tmpColor);
             if (tmpColor.ToHex() != "FFFFFFFF")
             {
-                if (curruntColor != color)
+                if (currentColor != color)
                 {
-                    curruntColor = color;
+                    currentColor = color;
                     Click((short)CoordinateReader.NewColor.X, (short)(CoordinateReader.NewColor.Y));
                     Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
                     string colorString = tmpColor.ToHex();

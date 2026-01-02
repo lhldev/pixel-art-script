@@ -4,7 +4,7 @@ namespace StarvingArtistsScript
     {
         None,
         Circle,
-        Triangle,
-        Diamond
+        Triangle,  // Reserved for future implementation
+        Diamond    // Reserved for future implementation
     }
 }
