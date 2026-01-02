@@ -15,6 +15,7 @@ namespace StarvingArtistsScript
         static Rgb24 curruntColor = new Rgb24(0, 0, 0);
         static int Wait = 50;
         static int RoundValue = 16;
+        static bool UseShapeReconstruction = false;
 
         static List<PixelToDraw> PixelToDrawList = new();
         static bool Prompt = true;
@@ -35,11 +36,16 @@ namespace StarvingArtistsScript
                     RoundValue = roundVal;
                     i++;
                 }
+                else if (args[i] == "-s" || args[i] == "--shapes")
+                {
+                    UseShapeReconstruction = true;
+                }
             }
 
             if (args.Length > 0) {
                 Console.WriteLine($"Wait = {Wait} ms");
                 Console.WriteLine($"RoundValue = {RoundValue}");
+                Console.WriteLine($"UseShapeReconstruction = {UseShapeReconstruction}");
             }
 
             DpiHelper.MakeDpiAware();
@@ -97,13 +103,39 @@ namespace StarvingArtistsScript
 
                     Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
 
-                    for (int y = 0; y < image.Height; y++)
+                    if (UseShapeReconstruction)
                     {
-                        for (int x = 0; x < image.Width; x++)
+                        Console.WriteLine("Using shape-based reconstruction with circles...");
+                        
+                        // Use the ImageReconstructor to optimize the image
+                        ImageReconstructor reconstructor = new ImageReconstructor(image);
+                        GridCell[,] grid = reconstructor.Reconstruct();
+                        
+                        // Render the optimized grid to get the final image
+                        Image<Rgb24> reconstructedImage = reconstructor.RenderGrid();
+                        
+                        // Use the reconstructed image for drawing
+                        for (int y = 0; y < reconstructedImage.Height; y++)
                         {
-                            Rgb24 pixelColor = RoundColor(image[x, y]);
+                            for (int x = 0; x < reconstructedImage.Width; x++)
+                            {
+                                Rgb24 pixelColor = RoundColor(reconstructedImage[x, y]);
 
-                            PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
+                                PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // Original simple pixel-by-pixel approach
+                        for (int y = 0; y < image.Height; y++)
+                        {
+                            for (int x = 0; x < image.Width; x++)
+                            {
+                                Rgb24 pixelColor = RoundColor(image[x, y]);
+
+                                PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x,y)));
+                            }
                         }
                     }
 

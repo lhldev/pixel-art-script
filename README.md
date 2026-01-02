@@ -32,9 +32,15 @@ dotnet run
   Rounds each RGB color value to reduce time for changing color.  
   Default: 16
 
+- `-s` or `--shapes`  
+  Enables shape-based image reconstruction using circle primitives.  
+  This mode analyzes the image and places geometric shapes to better approximate curved features.  
+  Default: disabled (uses standard pixel-by-pixel rendering)
+
 **Example usage:**
 ```bash
 ./starving-artist-script.exe -w 50 -r 16
+./starving-artist-script.exe -w 50 -r 16 --shapes
 ```
 *If the script is painting too quick, increas the WaitTime for smoother performance.*
 
