@@ -269,20 +269,22 @@ namespace StarvingArtistsScript
 
         static void DrawShape(ShapeInfo shape)
         {
+            // 1. First paint the background color of the cell
+            DrawPixel(shape.BackgroundColor, new Vector2(
+                (int)Math.Round(shape.Position.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X),
+                (int)Math.Round(shape.Position.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)
+            ));
+
             if (shape.Type == ShapeType.None)
             {
-                // Just paint background color
-                DrawPixel(shape.BackgroundColor, new Vector2(
-                    (int)Math.Round(shape.Position.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X),
-                    (int)Math.Round(shape.Position.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)
-                ));
+                // No shape to draw, just background
                 return;
             }
 
-            // 1. Click shape tool icon to select it
+            // 2. Click shape tool icon to select it
             Click((short)CoordinateReader.ShapeTool.X, (short)CoordinateReader.ShapeTool.Y);
 
-            // 2. Set foreground color (shape color)
+            // 3. Set foreground color (shape color)
             Rgba32 tmpFgColor = new Rgba32();
             shape.ForegroundColor.ToRgba32(ref tmpFgColor);
             
@@ -296,11 +298,11 @@ namespace StarvingArtistsScript
             Thread.Sleep(Wait);
             Click((short)CoordinateReader.NewColor.X, (short)CoordinateReader.NewColor.Y);
 
-            // 3. Calculate center position in screen coordinates
+            // 4. Calculate center position in screen coordinates
             float centerX = (shape.Position.X + 0.5f) * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X;
             float centerY = (shape.Position.Y + 0.5f) * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y;
 
-            // 4. Calculate drag distance based on shape size
+            // 5. Calculate drag distance based on shape size
             // Size 1 = radius 0.5 cells, Size 2 = radius 1 cell, Size 3 = radius 1.5 cells
             float radiusInCells = shape.Size * 0.5f;
             float radiusInPixels = radiusInCells * CoordinateReader.PointOffset;
@@ -313,14 +315,8 @@ namespace StarvingArtistsScript
 
             ClickAndDrag(x1, y1, x2, y2);
 
-            // 5. Click close button
+            // 6. Click close button
             Click((short)CoordinateReader.CloseButton.X, (short)CoordinateReader.CloseButton.Y);
-
-            // 6. Now paint the background color if needed (paint the cell background)
-            DrawPixel(shape.BackgroundColor, new Vector2(
-                (int)Math.Round(shape.Position.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X),
-                (int)Math.Round(shape.Position.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)
-            ));
         }
 
         static void DrawPixel(Rgb24 color, Vector2 pos)

@@ -21,7 +21,34 @@ namespace StarvingArtistsScript
         {
             string filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "coords.txt");
 
+            bool needsRecapture = false;
             if (!File.Exists(filePath))
+            {
+                needsRecapture = true;
+            }
+            else
+            {
+                // Check if file has all required coordinates
+                string[] checkLines = File.ReadAllLines(filePath);
+                bool hasShapeTool = false;
+                bool hasCloseButton = false;
+                
+                foreach (string line in checkLines)
+                {
+                    if (line.StartsWith("ShapeTool="))
+                        hasShapeTool = true;
+                    if (line.StartsWith("CloseButton="))
+                        hasCloseButton = true;
+                }
+                
+                if (!hasShapeTool || !hasCloseButton)
+                {
+                    Console.WriteLine("Coordinates file is outdated. Need to recapture coordinates.");
+                    needsRecapture = true;
+                }
+            }
+
+            if (needsRecapture)
             {
                 Program.Hook.MousePressed += OnMousePressed;
 
