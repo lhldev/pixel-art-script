@@ -1,6 +1,9 @@
 ﻿using System.Numerics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Drawing;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
 using SharpHook;
 using SharpHook.Data;
 
@@ -98,25 +101,19 @@ namespace StarvingArtistsScript
                     Image<Rgb24> processedImage = Image.Load<Rgb24>(fileName).Preprocess();
                     Image<Rgb24> pixelated = processedImage.Pixelate();
 
-                    //TEMP
+                    //TEMP - Preview and optimization
                     Image<Rgb24> preview = pixelated.Preview();
-                    Image<Rgb24> generated = preview.GenImage(processedImage);
+                    Console.WriteLine("Optimizing shapes...");
+                    List<ShapeInfo> shapes = ShapeOptimizer.OptimizeShapes(processedImage, pixelated);
+                    
+                    // Render the optimized image for preview
+                    Image<Rgb24> generated = RenderShapes(shapes, processedImage.Width);
                     Console.WriteLine($"image rmse: {ImageHelper.Rmse(preview, processedImage)}, shape rmse: {ImageHelper.Rmse(generated, processedImage)}");
                     generated.DisplayImage();
                     Console.WriteLine("Press 'p' to start or pause and 'r' to restart.");
 
-                    for (int y = 0; y < pixelated.Height; y++)
-                    {
-                        for (int x = 0; x < pixelated.Width; x++)
-                        {
-                            Rgb24 pixelColor = RoundColor(pixelated[x, y]);
-
-                            PixelToDrawList.Add(new PixelToDraw(pixelColor, new Vector2(x, y)));
-                        }
-                    }
-
-                    PixelToDrawList.Sort((e1, e2) => { return e2.color.ToString().CompareTo(e1.color.ToString()); });
-                    foreach (var item in PixelToDrawList)
+                    // Draw shapes in rendering order
+                    foreach (var shape in shapes)
                     {
                         while (Paused)
                         {
@@ -130,7 +127,7 @@ namespace StarvingArtistsScript
                         {
                             break;
                         }
-                        DrawPixel(item.color, new Vector2((int)Math.Round(item.point.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X), (int)Math.Round(item.point.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)));
+                        DrawShape(shape);
                     }
                     Console.WriteLine("Done! Restarting...");
                 }
@@ -160,6 +157,52 @@ namespace StarvingArtistsScript
             byte g = RoundComponent(color.G, Program.RoundValue);
             byte b = RoundComponent(color.B, Program.RoundValue);
             return new Rgb24(r, g, b);
+        }
+
+        public static Image<Rgb24> RenderShapes(List<ShapeInfo> shapes, int size)
+        {
+            Image<Rgb24> result = new Image<Rgb24>(size, size);
+            float pixelSize = (float)size / 32.0f;
+
+            // Render in order (shapes are already in rendering order 0-1023)
+            foreach (var shape in shapes)
+            {
+                // Draw background color for this cell
+                int x = (int)shape.Position.X;
+                int y = (int)shape.Position.Y;
+                
+                int xMin = (int)Math.Floor(x * pixelSize);
+                int yMin = (int)Math.Floor(y * pixelSize);
+                int xMax = (int)Math.Ceiling((x + 1) * pixelSize) - 1;
+                int yMax = (int)Math.Ceiling((y + 1) * pixelSize) - 1;
+
+                xMin = Math.Max(0, xMin);
+                yMin = Math.Max(0, yMin);
+                xMax = Math.Min(size - 1, xMax);
+                yMax = Math.Min(size - 1, yMax);
+
+                // Fill background
+                for (int py = yMin; py <= yMax; py++)
+                {
+                    for (int px = xMin; px <= xMax; px++)
+                    {
+                        result[px, py] = shape.BackgroundColor;
+                    }
+                }
+
+                // Draw shape if not None
+                if (shape.Type != ShapeType.None)
+                {
+                    float centerX = (shape.Position.X + 0.5f) * pixelSize;
+                    float centerY = (shape.Position.Y + 0.5f) * pixelSize;
+                    float radius = pixelSize / 2.0f * shape.Size;
+
+                    IPath shapePath = new EllipsePolygon(centerX, centerY, radius);
+                    result.Mutate(ctx => ctx.Fill(shape.ForegroundColor, shapePath));
+                }
+            }
+
+            return result;
         }
 
         public static void SimulateChar(char c)
@@ -208,6 +251,76 @@ namespace StarvingArtistsScript
             Thread.Sleep(Wait);
             Simulator.SimulateMouseRelease(MouseButton.Button1);
             Thread.Sleep(Wait);
+        }
+
+        static void ClickAndDrag(short x1, short y1, short x2, short y2)
+        {
+            RecognisedMouseMovement(x1, y1);
+            
+            Simulator.SimulateMousePress(MouseButton.Button1);
+            Thread.Sleep(Wait);
+            
+            RecognisedMouseMovement(x2, y2);
+            Thread.Sleep(Wait);
+            
+            Simulator.SimulateMouseRelease(MouseButton.Button1);
+            Thread.Sleep(Wait);
+        }
+
+        static void DrawShape(ShapeInfo shape)
+        {
+            if (shape.Type == ShapeType.None)
+            {
+                // Just paint background color
+                DrawPixel(shape.BackgroundColor, new Vector2(
+                    (int)Math.Round(shape.Position.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X),
+                    (int)Math.Round(shape.Position.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)
+                ));
+                return;
+            }
+
+            // 1. Click shape tool icon to select it
+            Click((short)CoordinateReader.ShapeTool.X, (short)CoordinateReader.ShapeTool.Y);
+
+            // 2. Set foreground color (shape color)
+            Rgba32 tmpFgColor = new Rgba32();
+            shape.ForegroundColor.ToRgba32(ref tmpFgColor);
+            
+            Click((short)CoordinateReader.NewColor.X, (short)CoordinateReader.NewColor.Y);
+            Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
+            string fgColorString = tmpFgColor.ToHex();
+            for (int i = 0; i < 6; i++)
+            {
+                SimulateChar(fgColorString[i]);
+            }
+            Thread.Sleep(Wait);
+            Click((short)CoordinateReader.NewColor.X, (short)CoordinateReader.NewColor.Y);
+
+            // 3. Calculate center position in screen coordinates
+            float centerX = (shape.Position.X + 0.5f) * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X;
+            float centerY = (shape.Position.Y + 0.5f) * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y;
+
+            // 4. Calculate drag distance based on shape size
+            // Size 1 = radius 0.5 cells, Size 2 = radius 1 cell, Size 3 = radius 1.5 cells
+            float radiusInCells = shape.Size * 0.5f;
+            float radiusInPixels = radiusInCells * CoordinateReader.PointOffset;
+
+            // Click and drag from center to define the circle size
+            short x1 = (short)Math.Round(centerX);
+            short y1 = (short)Math.Round(centerY);
+            short x2 = (short)Math.Round(centerX + radiusInPixels);
+            short y2 = (short)Math.Round(centerY);
+
+            ClickAndDrag(x1, y1, x2, y2);
+
+            // 5. Click close button
+            Click((short)CoordinateReader.CloseButton.X, (short)CoordinateReader.CloseButton.Y);
+
+            // 6. Now paint the background color if needed (paint the cell background)
+            DrawPixel(shape.BackgroundColor, new Vector2(
+                (int)Math.Round(shape.Position.X * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.X),
+                (int)Math.Round(shape.Position.Y * CoordinateReader.PointOffset + CoordinateReader.FirstPoint.Y)
+            ));
         }
 
         static void DrawPixel(Rgb24 color, Vector2 pos)

@@ -8,6 +8,8 @@ namespace StarvingArtistsScript
     {
         public static Vector2 NewColor;
         public static Vector2 NewColorText;
+        public static Vector2 ShapeTool;
+        public static Vector2 CloseButton;
         public static Vector2 FirstPoint;
         public static Vector2 LastPoint;
         public static float PointOffset;
@@ -36,6 +38,12 @@ namespace StarvingArtistsScript
                 Console.WriteLine("Double click on the text area to change color");
                 while (clickCount != 4)
                     Thread.Sleep(50);
+                Console.WriteLine("Double click on the shape tool icon (circle icon)");
+                while (clickCount != 5)
+                    Thread.Sleep(50);
+                Console.WriteLine("Double click on the close button (X button to close shape dialog)");
+                while (clickCount != 6)
+                    Thread.Sleep(50);
                 SaveCoords();
             }
 
@@ -57,6 +65,12 @@ namespace StarvingArtistsScript
                             break;
                         case "NewColorText":
                             NewColorText = parsedVector;
+                            break;
+                        case "ShapeTool":
+                            ShapeTool = parsedVector;
+                            break;
+                        case "CloseButton":
+                            CloseButton = parsedVector;
                             break;
                         case "FirstPoint":
                             FirstPoint = parsedVector;
@@ -87,19 +101,27 @@ namespace StarvingArtistsScript
                 {
                     case 0:
                         FirstPoint = pos;
-                        Console.WriteLine($"[1/4] FirstPoint set to {pos}");
+                        Console.WriteLine($"[1/6] FirstPoint set to {pos}");
                         break;
                     case 1:
                         LastPoint = pos;
-                        Console.WriteLine($"[2/4] LastPoint set to {pos}");
+                        Console.WriteLine($"[2/6] LastPoint set to {pos}");
                         break;
                     case 2:
                         NewColor = pos;
-                        Console.WriteLine($"[3/4] NewColor set to {pos}");
+                        Console.WriteLine($"[3/6] NewColor set to {pos}");
                         break;
                     case 3:
                         NewColorText = pos;
-                        Console.WriteLine($"[4/4] NewColorText set to {pos}");
+                        Console.WriteLine($"[4/6] NewColorText set to {pos}");
+                        break;
+                    case 4:
+                        ShapeTool = pos;
+                        Console.WriteLine($"[5/6] ShapeTool set to {pos}");
+                        break;
+                    case 5:
+                        CloseButton = pos;
+                        Console.WriteLine($"[6/6] CloseButton set to {pos}");
                         break;
                     default:
                         break;
@@ -117,6 +139,8 @@ namespace StarvingArtistsScript
                 writer.WriteLine($"LastPoint={LastPoint.X},{LastPoint.Y}");
                 writer.WriteLine($"NewColor={NewColor.X},{NewColor.Y}");
                 writer.WriteLine($"NewColorText={NewColorText.X},{NewColorText.Y}");
+                writer.WriteLine($"ShapeTool={ShapeTool.X},{ShapeTool.Y}");
+                writer.WriteLine($"CloseButton={CloseButton.X},{CloseButton.Y}");
             }
         }
 
