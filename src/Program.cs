@@ -15,6 +15,9 @@ namespace StarvingArtistsScript
         static Rgb24 curruntColor = new Rgb24(0, 0, 0);
         static int Wait = 50;
         static int RoundValue = 16;
+        
+        // Shape size to radius multiplier: Size 1 = 0.5 cells, Size 2 = 1 cell, Size 3 = 1.5 cells
+        const float ShapeSizeToRadiusMultiplier = 0.5f;
 
         static List<PixelToDraw> PixelToDrawList = new();
         static bool Prompt = true;
@@ -291,7 +294,11 @@ namespace StarvingArtistsScript
             Click((short)CoordinateReader.NewColor.X, (short)CoordinateReader.NewColor.Y);
             Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
             string fgColorString = tmpFgColor.ToHex();
-            for (int i = 0; i < 6; i++)
+            // Remove '#' prefix if present
+            if (fgColorString.StartsWith("#"))
+                fgColorString = fgColorString.Substring(1);
+            // Type the hex color (first 6 characters for RGB)
+            for (int i = 0; i < Math.Min(6, fgColorString.Length); i++)
             {
                 SimulateChar(fgColorString[i]);
             }
@@ -304,7 +311,7 @@ namespace StarvingArtistsScript
 
             // 5. Calculate drag distance based on shape size
             // Size 1 = radius 0.5 cells, Size 2 = radius 1 cell, Size 3 = radius 1.5 cells
-            float radiusInCells = shape.Size * 0.5f;
+            float radiusInCells = shape.Size * ShapeSizeToRadiusMultiplier;
             float radiusInPixels = radiusInCells * CoordinateReader.PointOffset;
 
             // Click and drag from center to define the circle size
@@ -332,7 +339,11 @@ namespace StarvingArtistsScript
                     Click((short)CoordinateReader.NewColor.X, (short)(CoordinateReader.NewColor.Y));
                     Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
                     string colorString = tmpColor.ToHex();
-                    for (int i = 0; i < 6; i++)
+                    // Remove '#' prefix if present
+                    if (colorString.StartsWith("#"))
+                        colorString = colorString.Substring(1);
+                    // Type the hex color (first 6 characters for RGB)
+                    for (int i = 0; i < Math.Min(6, colorString.Length); i++)
                     {
                         SimulateChar(colorString[i]);
                     }
