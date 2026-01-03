@@ -286,12 +286,8 @@ namespace StarvingArtistsScript
 
         private static IPath GenerateShapePath(Image<Rgb24> image, Vector2 pos, int size)
         {
-            float pixelSize = image.PixelSize();
-            int centerX = (int)MathF.Round((pos.X + 0.5f) * pixelSize);
-            int centerY = (int)MathF.Round((pos.Y + 0.5f) * pixelSize);
-            float radius = pixelSize / 2.0f * size;
-
-            return new EllipsePolygon(centerX, centerY, radius);
+            // Delegate to existing GenShape method to avoid duplication
+            return image.GenShape(pos, size);
         }
     }
 }

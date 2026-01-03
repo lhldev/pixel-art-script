@@ -232,6 +232,22 @@ namespace StarvingArtistsScript
                 Simulator.SimulateKeyRelease(KeyCode.VcLeftShift);
         }
 
+        static void TypeHexColor(Rgb24 color)
+        {
+            Rgba32 tmpColor = new Rgba32();
+            color.ToRgba32(ref tmpColor);
+            
+            string colorString = tmpColor.ToHex();
+            // Remove '#' prefix if present
+            if (colorString.StartsWith("#"))
+                colorString = colorString.Substring(1);
+            // Type the hex color (first 6 characters for RGB)
+            for (int i = 0; i < Math.Min(6, colorString.Length); i++)
+            {
+                SimulateChar(colorString[i]);
+            }
+        }
+
         public static void RecognisedMouseMovement(short x, short y, int steps = 5, int delayMs = 5)
         {
             Simulator.SimulateMouseMovement(x, (short)(y + steps));
@@ -288,20 +304,9 @@ namespace StarvingArtistsScript
             Click((short)CoordinateReader.ShapeTool.X, (short)CoordinateReader.ShapeTool.Y);
 
             // 3. Set foreground color (shape color)
-            Rgba32 tmpFgColor = new Rgba32();
-            shape.ForegroundColor.ToRgba32(ref tmpFgColor);
-            
             Click((short)CoordinateReader.NewColor.X, (short)CoordinateReader.NewColor.Y);
             Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
-            string fgColorString = tmpFgColor.ToHex();
-            // Remove '#' prefix if present
-            if (fgColorString.StartsWith("#"))
-                fgColorString = fgColorString.Substring(1);
-            // Type the hex color (first 6 characters for RGB)
-            for (int i = 0; i < Math.Min(6, fgColorString.Length); i++)
-            {
-                SimulateChar(fgColorString[i]);
-            }
+            TypeHexColor(shape.ForegroundColor);
             Thread.Sleep(Wait);
             Click((short)CoordinateReader.NewColor.X, (short)CoordinateReader.NewColor.Y);
 
@@ -338,15 +343,7 @@ namespace StarvingArtistsScript
                     curruntColor = color;
                     Click((short)CoordinateReader.NewColor.X, (short)(CoordinateReader.NewColor.Y));
                     Click((short)CoordinateReader.NewColorText.X, (short)CoordinateReader.NewColorText.Y);
-                    string colorString = tmpColor.ToHex();
-                    // Remove '#' prefix if present
-                    if (colorString.StartsWith("#"))
-                        colorString = colorString.Substring(1);
-                    // Type the hex color (first 6 characters for RGB)
-                    for (int i = 0; i < Math.Min(6, colorString.Length); i++)
-                    {
-                        SimulateChar(colorString[i]);
-                    }
+                    TypeHexColor(color);
                     Thread.Sleep(Wait);
                     Click((short)CoordinateReader.NewColor.X, (short)(CoordinateReader.NewColor.Y));
                 }
