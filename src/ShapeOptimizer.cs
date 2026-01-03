@@ -104,11 +104,12 @@ namespace StarvingArtistsScript
 
                     if (count > 0)
                     {
-                        colors[x, y] = new Rgb24(
+                        Rgb24 color = new Rgb24(
                             (byte)(rSum / count),
                             (byte)(gSum / count),
                             (byte)(bSum / count)
                         );
+                        colors[x, y] = Program.RoundColor(color);
                     }
                 }
             }
@@ -200,6 +201,9 @@ namespace StarvingArtistsScript
                     (byte)(gSum / fgPixels.Count),
                     (byte)(bSum / fgPixels.Count)
                 );
+                
+                // Round the color to match what will actually be drawn
+                fgColor = Program.RoundColor(fgColor);
 
                 // Compute error with shape
                 double shapeError = 0;
@@ -270,11 +274,12 @@ namespace StarvingArtistsScript
 
                 if (count > 0)
                 {
-                    shape.BackgroundColor = new Rgb24(
+                    Rgb24 color = new Rgb24(
                         (byte)(rSum / count),
                         (byte)(gSum / count),
                         (byte)(bSum / count)
                     );
+                    shape.BackgroundColor = Program.RoundColor(color);
                 }
             }
         }
